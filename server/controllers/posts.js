@@ -1,3 +1,5 @@
+const { getByTitle } = require("@testing-library/dom");
+
 module.exports = {
     readPosts: async (req, res) => {
       let { id } = req.session.user;
@@ -39,6 +41,18 @@ module.exports = {
     },
     createPost: (req, res) => {
       //code here
+      const db = req.app.get('db')
+      const { id } = req.session.user
+      const { title, img, content } = req.body
+      const date = newDate
+      if (id) {
+        db.create_post([id, title, img, content, date])
+        .then(res.status(200))
+        .catch(err => console.log(err))
+      } else {
+        return res.sendStatus(403)
+      };
+
     },
     readPost: (req, res) => {
       req.app.get('db').post.read_post(req.params.id)
