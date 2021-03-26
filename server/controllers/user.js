@@ -2,19 +2,20 @@ const bcrypt = require('bcryptjs')
 module.exports = {
   register: async (req, res)  => {
     const db = req.app.get('db');
-    const { username, password, profile_pic } = req.body
+    const { username, password } = req.body
     try {
-      const [existingUser] = await db.create_user(username)
+      // let [existingUser] = await db.check_user(username)
 
-      if(existingUser) {
+      if(username ) {
+        req.body.username = username
         return res.status(409).send('You will not fool me, user already exists!')
       }
-      const salt = bcrypt.genSaltSync(10);
-      const hash = bcrypt.hashSync(password, salt);
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password, salt);
 
-      const [ newUser ] = await db.create_user(username, password, profile_pic);
+    // const [ newUser ] = await db.create_user(username, hash);
 
-      req.session.user = newUser;
+    let newUser = await db.register(username, hash)
 
       res.status(200).send(newUser)
     } catch(error) {
@@ -22,19 +23,22 @@ module.exports = {
       return res.sendStatus(500)
     }
   },
-  login: (req, res) => {
-    const db = req.app('db')
+  login: async (req, res, next) => {
+    const db = req.app.get('db')
     const { username, password } = req.body
-    db.find_user_by_username(username)
-    .then(([existingUser]) => {
-      if (!existingUser) {
-        return res.status(403).send('You shall not pass! with that username')
+    let [user] = await username
+      if (user) {
+        return res.status(400).send('You shall not pass! with that username and/or password')
+      }
+    
+      let authenticated = bcrypt.compareSync(password, user.password)
+      if(!authenticated) {
+        return res.status(401).send('Email/Password doesnt exist')
       }
       delete existingUser.hash;
-      req.session,user = existingUser;
+      req.session.user = user;
       res.status(200).send(req.session.user)
-    })
-  },
+    },
   logout: (req, res) => {
     req.session.destroy();
     res.sendStatus(200);
