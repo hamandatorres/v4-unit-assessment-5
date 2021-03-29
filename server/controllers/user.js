@@ -4,10 +4,9 @@ module.exports = {
     const db = req.app.get('db');
     const { username, password } = req.body
     try {
-      // let [existingUser] = await db.check_user(username)
 
       if(username ) {
-        req.body.username = username
+        req.body.username = db.user.create_user(username)
         return res.status(409).send('You will not fool me, user already exists!')
       }
     const salt = bcrypt.genSaltSync(10);
@@ -26,7 +25,7 @@ module.exports = {
   login: async (req, res, next) => {
     const db = req.app.get('db')
     const { username, password } = req.body
-    let [user] = await username
+    let [user] = await db.user.find_user_by_username(username)
       if (user) {
         return res.status(400).send('You shall not pass! with that username and/or password')
       }
